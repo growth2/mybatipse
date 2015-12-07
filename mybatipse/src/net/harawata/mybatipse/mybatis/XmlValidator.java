@@ -305,8 +305,9 @@ public class XmlValidator extends AbstractValidator
 				{
 					return;
 				}
-				IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, reporter);
-				if (mapperFile == null)
+				List<IFile> mapperFileList = MapperNamespaceCache.getInstance().get(project, namespace,
+					reporter);
+				if (mapperFileList == null)
 				{
 					addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_NAMESPACE,
 						IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,
@@ -314,8 +315,17 @@ public class XmlValidator extends AbstractValidator
 				}
 				else
 				{
-					String xpath = "count(//" + targetElement + "[@id='" + statementId + "']) > 0";
-					if (!isElementExists(mapperFile, xpath))
+					boolean isFound = false;
+					for (IFile mapperFile : mapperFileList)
+					{
+						String xpath = "count(//" + targetElement + "[@id='" + statementId + "']) > 0";
+						if (isElementExists(mapperFile, xpath))
+						{
+							isFound = true;
+							break;
+						}
+					}
+					if (!isFound)
 					{
 						addMarker(result, file, doc.getStructuredDocument(), attr, MISSING_SQL,
 							IMarker.SEVERITY_ERROR, IMarker.PRIORITY_HIGH,

@@ -89,14 +89,21 @@ public class JavaCompletionProposalComputer implements IJavaCompletionProposalCo
 					SimpleParser parser = new SimpleParser(text,
 						offset - annotation.getSourceRange().getOffset() - 1);
 					final IJavaProject project = javaContext.getProject();
-					IFile mapperFile = MapperNamespaceCache.getInstance().get(project,
+					List<IFile> mapperFileList = MapperNamespaceCache.getInstance().get(project,
 						primaryType.getFullyQualifiedName(), null);
-					if (mapperFile != null)
+					if (mapperFileList != null)
 					{
-						Document mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
-						String matchString = parser.getMatchString();
-						return ProposalComputorHelper.proposeReference(project, mapperDoc, matchString,
-							offset - matchString.length(), parser.getReplacementLength(), "resultMap", null);
+						List<ICompletionProposal> result = new ArrayList<ICompletionProposal>();
+						for (IFile mapperFile : mapperFileList)
+						{
+							Document mapperDoc = MybatipseXmlUtil.getMapperDocument(mapperFile);
+							String matchString = parser.getMatchString();
+							List<ICompletionProposal> proposal = ProposalComputorHelper.proposeReference(project, mapperDoc, matchString,
+								offset - matchString.length(), parser.getReplacementLength(), "resultMap",
+								null);
+							result.addAll(proposal);
+						}
+						return result;
 					}
 				}
 			}

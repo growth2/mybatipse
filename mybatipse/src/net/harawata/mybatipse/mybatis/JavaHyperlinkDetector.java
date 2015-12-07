@@ -11,6 +11,8 @@
 
 package net.harawata.mybatipse.mybatis;
 
+import java.util.List;
+
 import javax.xml.xpath.XPathExpressionException;
 
 import org.eclipse.core.resources.IFile;
@@ -87,29 +89,32 @@ public class JavaHyperlinkDetector extends AbstractHyperlinkDetector
 			IJavaProject project = primaryType.getJavaProject();
 			if (project != null)
 			{
-				IFile mapperFile = MapperNamespaceCache.getInstance().get(project,
+				List<IFile> mapperFileList = MapperNamespaceCache.getInstance().get(project,
 					primaryType.getFullyQualifiedName(), null);
-				if (mapperFile != null)
+				if (mapperFileList != null)
 				{
-					IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
-					if (mapperDocument != null)
+					for (IFile mapperFile : mapperFileList)
 					{
-						try
+						IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
+						if (mapperDocument != null)
 						{
-							IDOMNode domNode = (IDOMNode)XpathUtil.xpathNode(mapperDocument, expression);
-							if (domNode != null)
+							try
 							{
-								Region destRegion = new Region(domNode.getStartOffset(),
-									domNode.getEndOffset() - domNode.getStartOffset());
-								String label = "Open <" + domNode.getNodeName() + "/> in XML mapper.";
-								return new IHyperlink[]{
-									new ToXmlHyperlink(mapperFile, srcRegion, label, destRegion)
-								};
+								IDOMNode domNode = (IDOMNode)XpathUtil.xpathNode(mapperDocument, expression);
+								if (domNode != null)
+								{
+									Region destRegion = new Region(domNode.getStartOffset(),
+										domNode.getEndOffset() - domNode.getStartOffset());
+									String label = "Open <" + domNode.getNodeName() + "/> in XML mapper.";
+									return new IHyperlink[]{
+										new ToXmlHyperlink(mapperFile, srcRegion, label, destRegion)
+									};
+								}
 							}
-						}
-						catch (XPathExpressionException e)
-						{
-							Activator.log(Status.ERROR, e.getMessage(), e);
+							catch (XPathExpressionException e)
+							{
+								Activator.log(Status.ERROR, e.getMessage(), e);
+							}
 						}
 					}
 				}

@@ -90,32 +90,37 @@ public class ProposalComputorHelper
 			final String exclude = idToExclude != null && idToExclude.length() > 0
 				&& namespacePart.equals(currentNamespace) ? idToExclude : null;
 
-			final Document xmlMapper;
 			if (namespacePart.length() == 0)
 			{
-				xmlMapper = domDoc;
-			}
-			else
-			{
-				IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespacePart, null);
-				xmlMapper = mapperFile == null ? null : MybatipseXmlUtil.getMapperDocument(mapperFile);
-			}
-
-			if (xmlMapper != null)
-			{
-				NodeList nodes = XpathUtil.xpathNodes(xmlMapper, "//" + targetElement + "/@id");
+				NodeList nodes = XpathUtil.xpathNodes(domDoc, "//" + targetElement + "/@id");
 				proposeXmlElements(results, nodes, matchChrs, replacementStart, replacementLength,
 					exclude);
 			}
-
-			proposeNamespaces(results, project, domDoc, namespacePart, currentNamespace, matchChrs,
-				start, length);
-
-			if ("select".equals(targetElement))
+			else
 			{
-				proposeJavaSelect(results, project,
-					namespacePart.length() > 0 ? namespacePart : currentNamespace, matchStr,
-					replacementStart, replacementLength);
+				List<IFile> mapperFileList = MapperNamespaceCache.getInstance().get(project,
+					namespacePart, null);
+				if (mapperFileList != null)
+				{
+					for (IFile mapperFile : mapperFileList)
+					{
+						final Document xmlMapper = MybatipseXmlUtil.getMapperDocument(mapperFile);
+						if (xmlMapper != null)
+						{
+							NodeList nodes = XpathUtil.xpathNodes(xmlMapper, "//" + targetElement + "/@id");
+							proposeXmlElements(results, nodes, matchChrs, replacementStart, replacementLength,
+								exclude);
+						}
+					}
+				}
+				proposeNamespaces(results, project, domDoc, namespacePart, currentNamespace, matchChrs,
+					start, length);
+				if ("select".equals(targetElement))
+				{
+					proposeJavaSelect(results, project,
+						namespacePart.length() > 0 ? namespacePart : currentNamespace, matchStr,
+						replacementStart, replacementLength);
+				}
 			}
 		}
 		catch (XPathExpressionException e)

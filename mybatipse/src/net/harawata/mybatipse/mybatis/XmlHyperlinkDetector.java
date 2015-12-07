@@ -165,52 +165,63 @@ public class XmlHyperlinkDetector extends AbstractHyperlinkDetector
 		if (elementId.length() == 0)
 			return null;
 
-		final Document xmlMapper;
+		// Document xmlMapper;
 		IHyperlink hyperlink = null;
-		IFile xmlMapperFile = null;
+		// IFile xmlMapperFile = null;
 		if (namespace.length() == 0)
 		{
-			xmlMapper = domDoc;
-		}
-		else
-		{
-			IJavaProject project = MybatipseXmlUtil.getJavaProject(document);
-			xmlMapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
-			xmlMapper = xmlMapperFile == null ? null
-				: MybatipseXmlUtil.getMapperDocument(xmlMapperFile);
-		}
-
-		if (xmlMapper != null)
-		{
-			IDOMNode node = (IDOMNode)XpathUtil.xpathNode(xmlMapper,
+			IDOMNode node = (IDOMNode)XpathUtil.xpathNode(domDoc,
 				"//" + targetElement + "[@id='" + elementId + "']");
 			if (node != null)
 			{
 				IRegion destRegion = new Region(node.getStartOffset(),
 					node.getEndOffset() - node.getStartOffset());
-				hyperlink = xmlMapperFile != null
-					? hyperlink = new ToXmlHyperlink(xmlMapperFile, linkRegion, attrValue, destRegion)
-					: new ToXmlHyperlink(textViewer, linkRegion, attrValue, destRegion);
+				hyperlink = new ToXmlHyperlink(textViewer, linkRegion, attrValue, destRegion);
+				return new IHyperlink[]{
+					hyperlink
+				};
+			}
+		}
+		else
+
+		{
+			IJavaProject project = MybatipseXmlUtil.getJavaProject(document);
+			List<IFile> xmlMapperFileList = MapperNamespaceCache.getInstance().get(project, namespace,
+				null);
+			if (xmlMapperFileList != null)
+			{
+				for (IFile xmlMapperFile : xmlMapperFileList)
+				{
+					final Document xmlMapper = MybatipseXmlUtil.getMapperDocument(xmlMapperFile);
+					if (xmlMapper != null)
+					{
+						IDOMNode node = (IDOMNode)XpathUtil.xpathNode(xmlMapper,
+							"//" + targetElement + "[@id='" + elementId + "']");
+						if (node != null)
+						{
+							IRegion destRegion = new Region(node.getStartOffset(),
+								node.getEndOffset() - node.getStartOffset());
+							hyperlink = new ToXmlHyperlink(xmlMapperFile, linkRegion, attrValue, destRegion);
+							return new IHyperlink[]{
+								hyperlink
+							};
+						}
+					}
+
+					// Couldn't find matching XML element. Search java element if applicable.
+					if ("select".equals(targetElement))
+					{
+						String mapperFqn = namespace.length() > 0 ? namespace
+							: MybatipseXmlUtil.getNamespace(domDoc);
+						return linkToJavaMapperMethod(document, mapperFqn, elementId, linkRegion,
+							new HasSelectAnnotation());
+					}
+				}
 			}
 		}
 
-		if (hyperlink != null)
-		{
-			return new IHyperlink[]{
-				hyperlink
-			};
-		}
-
-		// Couldn't find matching XML element. Search java element if applicable.
-		if ("select".equals(targetElement))
-		{
-			String mapperFqn = namespace.length() > 0 ? namespace
-				: MybatipseXmlUtil.getNamespace(domDoc);
-			return linkToJavaMapperMethod(document, mapperFqn, elementId, linkRegion,
-				new HasSelectAnnotation());
-		}
-
 		return null;
+
 	}
 
 	private IHyperlink[] linkToJavaMapperType(IDocument document, Region linkRegion, Node node)

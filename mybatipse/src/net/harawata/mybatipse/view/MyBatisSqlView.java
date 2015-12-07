@@ -13,6 +13,8 @@
 
 package net.harawata.mybatipse.view;
 
+import java.util.List;
+
 import javax.xml.xpath.XPathExpressionException;
 
 import org.eclipse.core.resources.IFile;
@@ -230,10 +232,15 @@ public class MyBatisSqlView extends ViewPart
 						.getJavaProject(includeElement.getStructuredDocument());
 					String namespace = refId.substring(0, lastDot);
 					String sqlId = refId.substring(lastDot + 1);
-					IFile mapperFile = MapperNamespaceCache.getInstance().get(project, namespace, null);
+					List<IFile> mapperFileList = MapperNamespaceCache.getInstance().get(project, namespace, null);
 
-					IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
-					return (ElementImpl)XpathUtil.xpathNode(mapperDocument, "//sql[@id='" + sqlId + "']");
+					if(mapperFileList != null) {
+						for (IFile mapperFile : mapperFileList) {
+							IDOMDocument mapperDocument = MybatipseXmlUtil.getMapperDocument(mapperFile);
+							ElementImpl result = (ElementImpl)XpathUtil.xpathNode(mapperDocument, "//sql[@id='" + sqlId + "']");
+							if (result != null) return result;
+						}
+					}
 				}
 			}
 			catch (XPathExpressionException e)
