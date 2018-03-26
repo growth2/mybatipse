@@ -428,6 +428,10 @@ public class XmlCompletionProposalComputer extends DefaultXMLCompletionProposalC
 		Document domDoc, int start, String currentValue, int offsetInCurrentValue, String exclude)
 			throws XPathExpressionException, IOException, CoreException
 	{
+		String log = String.format("currentValue[%s], offsetInCurrentValue[%d]\n", currentValue,
+			offsetInCurrentValue);
+		Activator.log(Status.WARNING, log);
+
 		int leftComma = currentValue.lastIndexOf(',', offsetInCurrentValue);
 		int rightComma = currentValue.indexOf(',', offsetInCurrentValue);
 		String newMatchString = currentValue.substring(leftComma + 1, offsetInCurrentValue).trim();
